@@ -495,14 +495,19 @@ def build(project, opts):
 
     for cwd, dirs, files in os.walk(dir_in.decode(opts.filename_enc)):
         cwd_site = cwd[len(dir_in):].lstrip(os.path.sep)
-        for sdir in dirs[:]:
-            if re.search(opts.ignore, opj(cwd_site, sdir)):
-                dirs.remove(sdir)
+        for d in dirs[:]:
+            src = opj(cwd_site, d)
+            if re.search(opts.ignore, src):
+                print('info   : ignoring dir %s' % src)
+                dirs.remove(d)
             else:
-                os.mkdir(opj(dir_out, cwd_site, sdir))
+                dst = opj(dir_out, cwd_site, d)
+                print('info   : creating dir %s' % dst)
+                os.mkdir(dst)
         for f in files:
-            if re.search(opts.ignore, opj(cwd_site, f)):
-                pass
+            src = opj(cwd_site, f)
+            if re.search(opts.ignore, src):
+                print('info   : ignoring file %s' % src)
             elif re.search(MKD_PATT, f):
                 page = Page(opj(cwd, f))
                 pages.append(page)

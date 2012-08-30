@@ -517,7 +517,9 @@ def build(project, opts):
                         func(f_src, f_dst)
                         break
                 else:
-                    shutil.copy(opj(cwd, f), opj(dir_out, cwd_site))
+                    src, dst = opj(cwd, f), opj(dir_out, cwd_site, f)
+                    print('info   : copying file %s to %s' % (src, dst))
+                    shutil.copyfile(src, dst)
 
     pages.sort(key=lambda p: int(p.get("sval", "0")))
 

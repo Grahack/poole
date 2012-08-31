@@ -625,8 +625,8 @@ def options():
                   help="serve project")
 
     og = optparse.OptionGroup(op, "Build options")
-    og.add_option("", "--base-url", default="/", metavar="URL",
-                  help="base url for relative links (default: /)")
+    og.add_option("", "--base-url", default="", metavar="URL",
+                  help="base url for relative links (default: '')")
     og.add_option("" , "--ignore", default=r"^\.|~$", metavar="REGEX",
                   help="input files to ignore (default: '^\.|~$')")
     og.add_option("" , "--md-ext", default=[], metavar="EXT",

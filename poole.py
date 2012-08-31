@@ -497,7 +497,7 @@ def build(project, opts):
         cwd_site = cwd[len(dir_in):].lstrip(os.path.sep)
         for d in dirs[:]:
             src = opj(cwd_site, d)
-            if re.search(opts.ignore, src):
+            if re.search(opts.ignore, d):
                 print('info   : ignoring dir %s' % src)
                 dirs.remove(d)
             else:

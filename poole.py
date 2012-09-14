@@ -393,6 +393,35 @@ def build(project, opts):
         print(exc)
         sys.exit(1)
 
+    def walk_input(opts):
+        pages = []
+        for cwd, dirs, files in os.walk(dir_in.decode(opts.filename_enc)):
+            cwd_site = cwd[len(dir_in):].lstrip(os.path.sep)
+            for sdir in dirs[:]:
+                if re.search(opts.ignore, opj(cwd_site, sdir)):
+                    dirs.remove(sdir)
+                else:
+                    os.mkdir(opj(dir_out, cwd_site, sdir))
+            for f in files:
+                if re.search(opts.ignore, opj(cwd_site, f)):
+                    pass
+                elif re.search(MKD_PATT, f):
+                    page = Page(opj(cwd, f))
+                    pages.append(page)
+                else:
+                    # either use a custom converter or do a plain copy
+                    for patt, (func, ext) in custom_converter.items():
+                        if re.search(patt, f):
+                            f_src = opj(cwd, f)
+                            f_dst = opj(dir_out, cwd_site, f)
+                            f_dst = '%s.%s' % (os.path.splitext(f_dst)[0], ext)
+                            print('info   : convert %s (%s)' % (f_src, func.__name__))
+                            func(f_src, f_dst)
+                            break
+                    else:
+                        shutil.copy(opj(cwd, f), opj(dir_out, cwd_site))
+        return pages
+
     # -------------------------------------------------------------------------
     # regex patterns and replacements
     # -------------------------------------------------------------------------
@@ -460,14 +489,15 @@ def build(project, opts):
                   "initialized, abort" % pelem)
             sys.exit(1)
 
-    # prepare output directory
-    for fod in glob.glob(opj(dir_out, "*")):
-        if os.path.isdir(fod):
-            shutil.rmtree(fod)
-        else:
-            os.remove(fod)
-    if not opx(dir_out):
-        os.mkdir(dir_out)
+    # prepare output directory, except if we only process a single page
+    if not opts.page:
+        for fod in glob.glob(opj(dir_out, "*")):
+            if os.path.isdir(fod):
+                shutil.rmtree(fod)
+            else:
+                os.remove(fod)
+        if not opx(dir_out):
+            os.mkdir(dir_out)
 
     # macro module
     fname = opj(opts.project, "macros.py")
@@ -493,31 +523,12 @@ def build(project, opts):
     pages = []
     custom_converter = macros.get('converter', {})
 
-    for cwd, dirs, files in os.walk(dir_in.decode(opts.filename_enc)):
-        cwd_site = cwd[len(dir_in):].lstrip(os.path.sep)
-        for sdir in dirs[:]:
-            if re.search(opts.ignore, opj(cwd_site, sdir)):
-                dirs.remove(sdir)
-            else:
-                os.mkdir(opj(dir_out, cwd_site, sdir))
-        for f in files:
-            if re.search(opts.ignore, opj(cwd_site, f)):
-                pass
-            elif re.search(MKD_PATT, f):
-                page = Page(opj(cwd, f))
-                pages.append(page)
-            else:
-                # either use a custom converter or do a plain copy
-                for patt, (func, ext) in custom_converter.items():
-                    if re.search(patt, f):
-                        f_src = opj(cwd, f)
-                        f_dst = opj(dir_out, cwd_site, f)
-                        f_dst = '%s.%s' % (os.path.splitext(f_dst)[0], ext)
-                        print('info   : convert %s (%s)' % (f_src, func.__name__))
-                        func(f_src, f_dst)
-                        break
-                else:
-                    shutil.copy(opj(cwd, f), opj(dir_out, cwd_site))
+    if opts.page:
+        opts.page = opj('.', opts.page)  # needed later for destination path
+        print('info   : only working on %s' % opts.page)
+        pages = [Page(opts.page)]
+    else:
+        pages = walk_input(opts)
 
     pages.sort(key=lambda p: int(p.get("sval", "0")))
 
@@ -629,6 +640,8 @@ def options():
                   help="base url for relative links (default: /)")
     og.add_option("" , "--ignore", default=r"^\.|~$", metavar="REGEX",
                   help="input files to ignore (default: '^\.|~$')")
+    og.add_option("" , "--page", default="", metavar="PAGE",
+                  help="only work on this Markdown file")
     og.add_option("" , "--md-ext", default=[], metavar="EXT",
                   action="append", help="enable a markdown extension")
     og.add_option("", "--input-enc", default="utf-8", metavar="ENC",

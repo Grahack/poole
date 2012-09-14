@@ -259,6 +259,19 @@ updates them when loading the `macros` module.
         # when executing this, the page and pages objects above are up-to-date
         print page["title"]
 
+### Generating a single page you are working on
+
+If ever your project became quite big, it now takes a certain amount of time
+to build. If you only work on a single page and need to build it several times,
+this can become annoying to rebuild each and every page of the project.
+
+You can pass `--page path/to/page/source.md` to Poole for it to only
+process this page.
+
+Beware though, that the `pages` object will only contain *this single page*,
+so pages that list other pages (like a simple navigation bar generation)
+should *not* be processed like this.
+
 ### Options and paths
 
 Similarly to `page` and `pages` the following objects are available within
